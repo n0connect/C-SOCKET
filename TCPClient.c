@@ -1,65 +1,109 @@
 // SOCKET PROGRAMMING "TCP_CLIENT" //
 // ------------------------    //
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-// ------------------------    //
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-// ------------------------    //
-# define PORT 1453
+#include "socketutil.h"
+#include "colorcodes.h"
+#include <stdbool.h>
+#include <pthread.h>
+
+# define PORT 2000
+
+void start_listening_messages_new_thread(int network_socket);
+void *listening_messages_thread(int network_socket);
+
+
+void *listening_messages_thread(int network_socket){
+    char buffer[1024];
+
+    while (true) {
+        ssize_t amount_received = recv(network_socket, buffer, sizeof(buffer) - 1, 0);
+
+        if (amount_received <= 0) {
+            break;
+        }
+
+        buffer[amount_received] = '\0';
+        fprintf(stdout, BGRN" - %s\n", buffer);
+    }
+
+}
+
+void start_listening_messages_new_thread(int network_socket){
+    pthread_t thread_id;
+    int thread_result = pthread_create(&thread_id, NULL, listening_messages_thread, network_socket);
+    
+    if (thread_result != 0) {
+        perror(BRED " - Failed to create thread");
+        exit(EXIT_FAILURE);
+    }
+    pthread_detach(thread_id); // Automatically clean up the thread resources when it exits
+}
 
 int main(int argc, char **argv){
-    
-    // Create a socket return value is socket descriptor 
-    // @params AF_INET: IPV4, SOCK_STREAM: TCP, PROTOCOL: 0  
-    int network_socket = socket(AF_INET, SOCK_STREAM, 0);
-
-    // ? Socket is succesfully created
-    if(network_socket < 0){
-        fprintf(stderr, " **Socket error.\n");
-        exit(EXIT_FAILURE);
-    } else {
-        fprintf(stdout, " - Socket created succesfully.\n");
-    }
+    // Create a socket, return value is socket descriptor 
+    int network_socket = createTCPIp4Socket();
 
     // Specify an address for the network_socket
-    // sockaddr_in for the IPV4 Protocol
-    struct sockaddr_in server_address;
-    
-    // Reset the created server_address using the memset
-    memset(&server_address, 0, sizeof(server_address));
+    struct sockaddr_in* server_address = createIPv4Address("127.0.0.1", PORT);
 
-    server_address.sin_family = AF_INET;
-    server_address.sin_port = htons(PORT);
-    server_address.sin_addr.s_addr = htonl(INADDR_ANY); // or inet_addr("127.0.0.1")
-
-    // ? Connect the server address
-    // @param SOCKET, server_address, size of the server adress 
-    if(connect(network_socket, (struct sockaddr*)&server_address, sizeof(server_address)) < 0){
-        fprintf(stderr, " - Connection error.\n");
+    // Connect to the server address
+    if (connect(network_socket, (struct sockaddr*)server_address, sizeof(*server_address)) < 0) {
+        fprintf(stderr, BRED" - Connection error.\n");
+        free(server_address); // Free memory allocated by createIPv4Address
         exit(EXIT_FAILURE);
     } else {
-        fprintf(stdout, " - Connection succesfully.\n");
+        fprintf(stdout, BYEL" - Connection successfully.\n");
     }
 
-    // ? Recieve data from the server
-    // @param SOCKET, data address, data size, FLAGS;
-    char server_response[256];
-    
-    if(recv(network_socket, &server_response, sizeof(server_response), 0) < 0){
-        fprintf(stderr, " ** Server Recieve error");
-        exit(EXIT_FAILURE);
-    } else {
-        fprintf(stderr, " - Recieve is successfully");
+    char *client_name = NULL;
+    size_t client_name_size = 0;
+    fprintf(stderr, BCYN"  - Please enter your username: ");
+    ssize_t name_count = getline(&client_name, &client_name_size, stdin);
+    if (name_count > 0) {
+        client_name[strcspn(client_name, "\n")] = '\0'; // Remove newline character
     }
 
-    // Dump the server's response
-    fprintf(stdout, " - SERVER RESPONSE: %s\n", server_response);
+    // Chatting with server.
+    char *line = NULL;
+    size_t line_size = 0;
+    fprintf(stderr, CYN"\ntype and we will send(type exit)...\n");
 
+    start_listening_messages_new_thread(network_socket);
+
+    char buffer[1024];
+    while (true) {
+        
+        if (line) {
+            free(line);
+        }
+
+        line = NULL;
+        line_size = 0;
+
+        ssize_t char_count = getline(&line, &line_size, stdin);
+        if (char_count > 0) {
+            line[strcspn(line, "\n")] = '\0'; // Remove newline character
+
+            if (strcmp(line, "exit") == 0) {
+                break;
+            }
+
+            snprintf(buffer, sizeof(buffer), "%s: %s", client_name, line);
+
+            ssize_t amount_was_sent = send(network_socket, buffer, strlen(buffer), 0);
+            if (amount_was_sent < 0) {
+                fprintf(stderr, BRED" - Message send error.\n");
+                free(server_address); // Free memory allocated by createIPv4Address
+                exit(EXIT_FAILURE);
+            } else {
+                fprintf(stdout, BYEL" - Message sent successfully.\n");
+            }
+        }
+    }
+
+    // Clean up
     close(network_socket);
+    free(server_address); // Free memory allocated by createIPv4Address
+    free(client_name);   // Free memory allocated by getline
+    free(line);          // Free memory allocated by getline
     exit(EXIT_SUCCESS);
-    return 0;
 }
