@@ -34,7 +34,7 @@ A starting point for designing a low-level server-client communication “socket
            struct in_addr  sin_addr;       /* IPv4 address */
        };
 
-# BUILD
+## BUILD
        gcc -o tcp_server TCPServer.c
        gcc -o tcp_client TCPClient.c
 
