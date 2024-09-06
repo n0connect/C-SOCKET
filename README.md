@@ -1,7 +1,7 @@
 # C-SOCKET
 A starting point for designing a low-level server-client communication “socket” in C, setting up client-server connections and constructing structures for data transmission.
 
-# DESCRIPTIONS OF THE USING FUNCTIONS
+## DESCRIPTIONS OF THE USING FUNCTIONS
 
        socket()  creates  an  endpoint for communication and returns a file descriptor that refers to that endpoint.  The
        file descriptor returned by a successful call will be the lowest-numbered file descriptor not currently  open  for
