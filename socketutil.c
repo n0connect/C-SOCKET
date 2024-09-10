@@ -32,7 +32,7 @@ struct sockaddr_in* createIPv4Address(char *ip_address, unsigned short int port)
     if(strlen(ip_address) == 0)
         address->sin_addr.s_addr = (INADDR_ANY);
     else
-        inet_pton(AF_INET, ip_address, &(address->sin_addr));  // Hatalı kısım burada düzeltildi
+        inet_pton(AF_INET, ip_address, &(address->sin_addr));
         
 
     return address;
