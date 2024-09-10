@@ -1,7 +1,7 @@
 # C-SOCKET
 A starting point for designing a low-level server-client communication “socket” in C, setting up client-server connections and constructing structures for data transmission.
 
-A simple level Client Server Database relationship designed with low level sockets running on a local network is covered. This test product, which is logged in with the username and password registered in the database, shows 3 people who can communicate with each other over the TCP protocol without a password and the interaction on the server.
+A simple level Client Server Database relationship designed with low level sockets running on a local network is covered. This test product, which is logged in with the username and password registered in the database, shows 3 people who can communicate with each other over the TCP protocol Without encryption and the interaction on the server.
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/260ecf0b-b74b-46aa-824e-6852db6b6a59" alt="
